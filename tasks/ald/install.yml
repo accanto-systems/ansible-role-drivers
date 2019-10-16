@@ -1,0 +1,32 @@
+
+- name: Copy Ansible Lifecycle Driver helm values
+  template: 
+    src: ald/values.yml
+    dest: /tmp/ald-values.yml
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}" 
+
+- name: Install Ansible Lifecycle Driver Helm Charts
+  command: "helm install {{ helm_inst_ald_chart }} --name ansible-lifecycle-driver -f /tmp/ald-values.yml {% if ald_docker_registry_values_path is defined %}-f {{ ald_docker_registry_values_path }}{% endif %}"
+
+- name: Gather Ansible Lifecycle Driver Node Port
+  shell: "kubectl describe service ansible-lifecycle-driver | grep http | grep NodePort | awk '{print $3}'"
+  register: gather_ald_port_result
+
+- name: Determine Ansible Lifecycle Driver Node Port
+  set_fact:
+    ald_port: "{{ gather_ald_port_result.stdout | replace('/TCP', '') }}"
+
+- name: Determine Ansible Lifecycle Driver address
+  set_fact: 
+    ald_addr: "http://{{ advertise_address if advertise_address is defined else hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:{{ald_port}}"
+
+- name: Wait for Ansible Lifecycle Driver to be ready
+  uri:
+    url: "{{ ald_addr }}/api/lifecycle/ui"
+    validate_certs: false
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 100
+  delay: 20

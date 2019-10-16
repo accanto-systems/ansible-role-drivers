@@ -1,0 +1,33 @@
+- name: Determine if Ansible Lifecycle Driver already installed
+  shell: helm ls | grep ansible-lifecycle-driver
+  failed_when: false
+  changed_when: false
+  register: ald_installed
+
+- when: ald_installed is not failed and ald_installed.rc == 0
+  block:
+    - name: Check Ansible Lifecycle Driver version to be installed
+      shell: helm inspect chart {{ helm_inst_ald_chart }} | grep version | awk {'print $2'}
+      register:  ald_new_version
+
+    - debug:
+        msg: "Ansible Lifecycle Driver version to be installed is {{ald_new_version.stdout}}"
+
+    - name: Compare with current Ansible Lifecycle Driver version
+      shell: helm ls | grep ansible-lifecycle-driver | grep -w ansiblelifecycledriver-{{ ald_new_version.stdout }}
+      register: ald_version_compare
+      failed_when: false
+      changed_when: false
+
+    - name: Set install 
+      set_fact:
+        ald_install_allowed: "{{ True if ald_version_compare.rc != 0 else False }}"
+
+    - name: Announce Install 
+      debug:
+        msg: "{{ 'Re-installing Ansible Lifecycle Driver as current version is different to '+ald_new_version.stdout if ald_install_allowed else 'Ansible Lifecycle Driver version '+ald_new_version.stdout+' already installed' }}"
+
+- name: Install when no existing version
+  set_fact:
+    ald_install_allowed: True
+  when: ald_installed is failed or ald_installed.rc != 0

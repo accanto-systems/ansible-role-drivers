@@ -1,0 +1,38 @@
+####################################################################################
+# drivers_ovd_docker_strategy == from_package
+####################################################################################
+
+- name: Check if Openstack VIM Driver Docker TAR already exists
+  stat:
+    path: "{{ drivers_installer_dir }}/{{ drivers_ovd_docker_tar|basename }}" 
+  register: docker_tar_stat
+  when: drivers_force_refresh_packages == False
+
+####################################################################################
+# When drivers_ovd_docker_tar is a HTTP/HTTPs address
+####################################################################################
+- name: Pull Openstack VIM Driver Docker TAR
+  get_url:
+    url: "{{ drivers_ovd_docker_tar }}" 
+    dest: "{{ drivers_installer_dir }}/{{ drivers_ovd_docker_tar|basename }}" 
+  when: >
+    (drivers_force_refresh_packages == True or docker_tar_stat.stat.exists == False)
+    and (drivers_ovd_docker_tar | urlsplit('scheme') == 'http') or (drivers_ovd_docker_tar | urlsplit('scheme') == 'https')
+
+####################################################################################
+# When drivers_ovd_docker_tar is a file address
+####################################################################################
+- name: Copy Openstack VIM Driver Docker TAR from local file
+  copy: 
+    remote_src: no
+    src: "{{ drivers_ovd_docker_tar }}" 
+    dest: "{{ drivers_installer_dir }}/{{ drivers_ovd_docker_tar|basename }}" 
+  when: >
+    (drivers_force_refresh_packages == True or docker_tar_stat.stat.exists == False)
+    and (drivers_ovd_docker_tar | urlsplit('scheme') != 'http') and (drivers_ovd_docker_tar | urlsplit('scheme') != 'https')
+
+####################################################################################
+# For both HTTP and File
+####################################################################################
+- name: Load Docker TAR
+  shell: docker load --input {{ drivers_installer_dir }}/{{ drivers_ovd_docker_tar|basename }}

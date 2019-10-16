@@ -1,0 +1,65 @@
+- name: Register installation directory
+  set_fact:
+    drivers_installer_dir: "/home/{{ ansible_user_id }}/drivers-installer"
+
+- name: Print installation directory
+  debug:
+    msg: "Drivers installation directory set to: {{drivers_installer_dir}}"
+
+- name: Ensure directory for installation exists
+  file:
+    path: "{{ drivers_installer_dir }}"
+    state: directory
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
+
+- when: drivers_ald_enabled|default(False)|bool == True
+  block:
+    - import_tasks: ald/validate_charts_strategy.yml
+    - import_tasks: ald/validate_docker_strategy.yml
+    - import_tasks: ald/prepare_chart_from_path.yml
+    - name: Check if force re-install is enabled
+      set_fact:
+        ald_install_allowed: True
+      when: drivers_ald_force_reinstall|default(False)|bool == True
+    - import_tasks: ald/check_current_install.yml
+      when: drivers_ald_force_reinstall|default(False)|bool == False
+    - when: ald_install_allowed == True
+      block:
+        - import_tasks: ald/prepare_docker_images_from_tar.yml
+          when: drivers_ald_docker_strategy == 'from_package'
+        - import_tasks: ald/prepare_docker_images_from_image.yml
+          when: drivers_ald_docker_strategy == 'from_image'
+        - import_tasks: ald/uninstall.yml
+        - import_tasks: ald/install.yml
+    - when: drivers_onboard|default(False)|bool == True
+      import_tasks: onboard_lifecycle_driver.yml
+      vars:
+        onboard_driver_type: "{{ drivers_ald_type }}"
+        onboard_driver_url: "{{ drivers_ald_url }}"
+      
+- when: drivers_ovd_enabled|default(False)|bool == True
+  block:
+    - import_tasks: ovd/validate_charts_strategy.yml
+    - import_tasks: ovd/validate_docker_strategy.yml
+    - import_tasks: ovd/prepare_chart_from_path.yml
+    - name: Check if force re-install is enabled
+      set_fact:
+        ovd_install_allowed: True
+      when: drivers_ovd_force_reinstall|default(False)|bool == True
+    - import_tasks: ovd/check_current_install.yml
+      when: drivers_ovd_force_reinstall|default(False)|bool == False
+    - when: ovd_install_allowed == True
+      block:
+        - import_tasks: ovd/prepare_docker_images_from_tar.yml
+          when: drivers_ovd_docker_strategy == 'from_package'
+        - import_tasks: ovd/prepare_docker_images_from_image.yml
+          when: drivers_ovd_docker_strategy == 'from_image'
+        - import_tasks: ovd/uninstall.yml
+        - import_tasks: ovd/install.yml
+    - when: drivers_onboard|default(False)|bool == True
+      import_tasks: onboard_vim_driver.yml
+      vars:
+        onboard_driver_type: "{{ drivers_ovd_type }}"
+        onboard_driver_url: "{{ drivers_ovd_url }}"
+      

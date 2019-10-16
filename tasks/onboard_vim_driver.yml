@@ -1,0 +1,33 @@
+- name: Authenticate with LM
+  uri:
+    url: "{{ drivers_onboard_addr }}/oauth/token"
+    validate_certs: no
+    method: POST
+    body_format: form-urlencoded
+    body:
+      grant_type: "client_credentials"
+    headers:
+      authorization: "Basic {{ (drivers_onboard_client + ':' + drivers_onboard_client_secret) | b64encode }}"
+    return_content: yes
+    status_code: 200
+  register: lm_auth_response
+  when: drivers_onboard_auth|default(False)|bool == True
+
+- name: Set Access Token fact
+  set_fact:
+    lm_access_token: "{{ lm_auth_response.json.access_token }}"
+  when: drivers_onboard_auth|default(False)|bool == True
+
+- name: Onboard driver
+  uri:
+    url: "{{ drivers_onboard_addr }}/api/resource-manager/vim-drivers"
+    validate_certs: no
+    method: POST
+    body_format: json
+    body:
+      infrastructureType: "{{onboard_driver_type}}"
+      baseUri: "{{onboard_driver_url}}"
+    headers:
+      authorization: "{% if drivers_onboard_auth|default(False)|bool == True %}Bearer {{ lm_access_token }}{% endif %}"
+    status_code: 201
+

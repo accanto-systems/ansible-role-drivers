@@ -1,0 +1,6 @@
+- name: "Validate variable: drivers_ovd_chart"
+  assert:
+    that: 
+      - "drivers_ovd_chart is defined"
+    fail_msg: "drivers_ovd_chart must be defined when drivers_ovd_enabled"
+

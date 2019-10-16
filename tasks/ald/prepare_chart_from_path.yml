@@ -1,0 +1,31 @@
+- name: Check if Ansible Lifecycle Driver chart already exists
+  stat:
+    path: "{{ drivers_installer_dir }}/{{ drivers_ald_chart|basename }}" 
+  register: chart_package_stat
+  when: drivers_force_refresh_packages == False
+
+####################################################################################
+# HTTP/HTTPs
+####################################################################################
+- name: Pull Ansible Lifecycle Driver chart
+  get_url:
+    url: "{{ drivers_ald_chart }}" 
+    dest: "{{ drivers_installer_dir }}/{{ drivers_ald_chart|basename }}"
+  when: >
+    (drivers_force_refresh_packages == True or chart_package_stat.stat.exists == False)
+    and (drivers_ald_chart | urlsplit('scheme') == 'http') or (drivers_ald_chart | urlsplit('scheme') == 'https')
+####################################################################################
+# FILE
+####################################################################################
+- name: Copy Ansible Lifecycle Driver chart from local file
+  copy: 
+    remote_src: no
+    src: "{{ drivers_ald_chart }}" 
+    dest: "{{ drivers_installer_dir }}/{{ drivers_ald_chart|basename }}"
+  when: >
+    (drivers_force_refresh_packages == True or chart_package_stat.stat.exists == False)
+    and (drivers_ald_chart | urlsplit('scheme') != 'http') and (drivers_ald_chart | urlsplit('scheme') != 'https')
+
+- name: Set paths to charts
+  set_fact:
+    helm_inst_ald_chart: "'{{ drivers_installer_dir }}/{{ drivers_ald_chart|basename }}'"

@@ -1,0 +1,6 @@
+- name: "Validate variable: drivers_ald_chart"
+  assert:
+    that: 
+      - "drivers_ald_chart is defined"
+    fail_msg: "drivers_ald_chart must be defined when drivers_ald_enabled"
+

@@ -1,0 +1,32 @@
+
+- name: Copy Openstack VIM Driver helm values
+  template: 
+    src: ovd/values.yml
+    dest: /tmp/ovd-values.yml
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}" 
+
+- name: Install Openstack VIM Driver Helm Charts
+  command: "helm install {{ helm_inst_ovd_chart }} --name os-vim-driver -f /tmp/ovd-values.yml {% if ovd_docker_registry_values_path is defined %}-f {{ ovd_docker_registry_values_path }}{% endif %}"
+
+- name: Gather Openstack VIM Driver Node Port
+  shell: "kubectl describe service os-vim-driver | grep http | grep NodePort | awk '{print $3}'"
+  register: gather_ovd_port_result
+
+- name: Determine Openstack VIM Driver Node Port
+  set_fact:
+    ovd_port: "{{ gather_ovd_port_result.stdout | replace('/TCP', '') }}"
+
+- name: Determine Openstack VIM Driver address
+  set_fact: 
+    ovd_addr: "http://{{ advertise_address if advertise_address is defined else hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:{{ovd_port}}"
+
+- name: Wait for Openstack VIM Driver to be ready
+  uri:
+    url: "{{ ovd_addr }}/api/infrastructure/ui"
+    validate_certs: false
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 100
+  delay: 20

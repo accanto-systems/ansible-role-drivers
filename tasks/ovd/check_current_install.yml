@@ -1,0 +1,33 @@
+- name: Determine if Openstack VIM Driver already installed
+  shell: helm ls | grep os-vim-driver
+  failed_when: false
+  changed_when: false
+  register: ovd_installed
+
+- when: ovd_installed is not failed and ovd_installed.rc == 0
+  block:
+    - name: Check Openstack VIM Driver version to be installed
+      shell: helm inspect chart {{ helm_inst_ovd_chart }} | grep version | awk {'print $2'}
+      register: ovd_new_version
+
+    - debug:
+        msg: "Openstack VIM Driver version to be installed is {{ovd_new_version.stdout}}"
+
+    - name: Compare with current Openstack VIM Driver version
+      shell: helm ls | grep os-vim-driver | grep -w os-vim-driver-{{ ovd_new_version.stdout }}
+      register: ovd_version_compare
+      failed_when: false
+      changed_when: false
+
+    - name: Set install 
+      set_fact:
+        ovd_install_allowed: "{{ True if ovd_version_compare.rc != 0 else False }}"
+
+    - name: Announce Install 
+      debug:
+        msg: "{{ 'Re-installing Openstack VIM Driver as current version is different to '+ovd_new_version.stdout if ovd_install_allowed else 'Openstack VIM Driver version '+ovd_new_version.stdout+' already installed' }}"
+
+- name: Install when no existing version
+  set_fact:
+    ovd_install_allowed: True
+  when: ovd_installed is failed or ovd_installed.rc != 0

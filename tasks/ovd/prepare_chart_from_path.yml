@@ -1,0 +1,31 @@
+- name: Check if Openstack VIM Driver chart already exists
+  stat:
+    path: "{{ drivers_installer_dir }}/{{ drivers_ovd_chart|basename }}" 
+  register: chart_package_stat
+  when: drivers_force_refresh_packages == False
+
+####################################################################################
+# HTTP/HTTPs
+####################################################################################
+- name: Pull Openstack VIM Driver chart
+  get_url:
+    url: "{{ drivers_ovd_chart }}" 
+    dest: "{{ drivers_installer_dir }}/{{ drivers_ovd_chart|basename }}"
+  when: >
+    (drivers_force_refresh_packages == True or chart_package_stat.stat.exists == False)
+    and (drivers_ovd_chart | urlsplit('scheme') == 'http') or (drivers_ovd_chart | urlsplit('scheme') == 'https')
+####################################################################################
+# FILE
+####################################################################################
+- name: Copy Openstack VIM Driver chart from local file
+  copy: 
+    remote_src: no
+    src: "{{ drivers_ovd_chart }}" 
+    dest: "{{ drivers_installer_dir }}/{{ drivers_ovd_chart|basename }}"
+  when: >
+    (drivers_force_refresh_packages == True or chart_package_stat.stat.exists == False)
+    and (drivers_ovd_chart | urlsplit('scheme') != 'http') and (drivers_ovd_chart | urlsplit('scheme') != 'https')
+
+- name: Set paths to charts
+  set_fact:
+    helm_inst_ovd_chart: "'{{ drivers_installer_dir }}/{{ drivers_ovd_chart|basename }}'"

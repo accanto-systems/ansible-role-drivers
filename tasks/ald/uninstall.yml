@@ -1,0 +1,9 @@
+- name: Check ansible-lifecycle-driver release in helm
+  shell: helm get ansible-lifecycle-driver
+  register: helm_get_ald
+  failed_when: false
+  changed_when: false
+
+- name: Uninstall ansible-lifecycle-driver release
+  shell: helm delete ansible-lifecycle-driver --purge
+  when: helm_get_ald is not failed and helm_get_ald.rc == 0

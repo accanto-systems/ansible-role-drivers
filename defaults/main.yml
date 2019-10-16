@@ -1,0 +1,40 @@
+
+## Enable/disable onboarding the drivers
+drivers_onboard: True
+## Tell the role if the LM environment is secure
+drivers_onboard_auth: True
+drivers_onboard_addr: 
+drivers_onboard_client: LmClient
+drivers_onboard_client_secret: 
+
+drivers_force_refresh_packages: False
+
+## Ansible Lifecycle Driver
+drivers_ald_enabled: True
+drivers_ald_force_reinstall: False
+## Full file or http address of the helm chart
+drivers_ald_chart: https://github.com/accanto-systems/ansible-lifecycle-driver/releases/download/0.3.0/ansiblelifecycledriver-0.3.0.tgz
+## Docker image and version 
+drivers_ald_docker_strategy: from_image
+drivers_ald_docker_image: accanto/ansible-lifecycle-driver
+drivers_ald_docker_version: 0.3.0
+#drivers_ald_docker_strategy: from_package
+#drivers_ald_docker_tar: 
+## Type to assign the driver to during onboarding
+drivers_ald_type: Ansible
+drivers_ald_url: http://ansible-lifecycle-driver:8293
+
+## Openstack VIM Driver
+drivers_ovd_enabled: True
+drivers_ovd_force_reinstall: False
+## Full file or http address of the helm chart
+drivers_ovd_chart: https://github.com/accanto-systems/openstack-vim-driver/releases/download/0.3.0/os-vim-driver-0.3.0.tgz
+## Docker image and version 
+drivers_ovd_docker_strategy: from_image
+drivers_ovd_docker_image: accanto/os-vim-driver
+drivers_ovd_docker_version: 0.3.0
+#drivers_ovd_docker_strategy: from_package
+#drivers_ovd_docker_tar: 
+## Type to assign the driver to during onboarding
+drivers_ovd_type: Openstack
+drivers_ovd_url: http://os-vim-driver:8292

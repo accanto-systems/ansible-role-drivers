@@ -1,0 +1,9 @@
+- name: Check os-vim-driver release in helm
+  shell: helm get os-vim-driver
+  register: helm_get_ovd
+  failed_when: false
+  changed_when: false
+
+- name: Uninstall os-vim-driver release
+  shell: helm delete os-vim-driver --purge
+  when: helm_get_ovd is not failed and helm_get_ovd.rc == 0

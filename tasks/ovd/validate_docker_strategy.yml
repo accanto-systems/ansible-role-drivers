@@ -1,0 +1,26 @@
+- name: "Validate variable: drivers_ovd_docker_strategy"
+  assert:
+    that:
+      - "drivers_ovd_docker_strategy == 'from_package' or drivers_ovd_docker_strategy == 'from_image'"
+    fail_msg: "drivers_ovd_docker_strategy must be either: 'from_package' or 'from_image'"
+
+####################################################################################
+# Strategy: from_package
+####################################################################################
+- name: "Validate variable: drivers_ovd_docker_tar"
+  assert:
+    that: 
+      - "drivers_ovd_docker_tar is defined"
+    fail_msg: "drivers_ovd_docker_tar must be defined when drivers_ovd_docker_strategy == 'from_package'"
+  when: drivers_ovd_docker_strategy == "from_package"
+
+####################################################################################
+# Strategy: from_image
+####################################################################################
+
+- name: "Validate variable: drivers_ovd_docker_image"
+  assert:
+    that: 
+      - "drivers_ovd_docker_image is defined"
+    fail_msg: "drivers_ovd_docker_image must be defined when drivers_ovd_docker_strategy == 'from_image'"
+  when: drivers_ovd_docker_strategy == "from_image"
