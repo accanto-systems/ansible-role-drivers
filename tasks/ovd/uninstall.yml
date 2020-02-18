@@ -7,3 +7,4 @@
 - name: Uninstall os-vim-driver release
   shell: helm delete os-vim-driver --purge
   when: helm_get_ovd is not failed and helm_get_ovd.rc == 0
+

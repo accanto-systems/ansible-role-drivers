@@ -18,6 +18,14 @@
     lm_access_token: "{{ lm_auth_response.json.access_token }}"
   when: drivers_onboard_auth|default(False)|bool == True
 
+- name: Fetch driver certificate
+  shell: "kubectl get secret {{onboard_driver_cert_secret}} -o 'go-template={{'{{'}}index .data \"tls.crt\"{{'}}'}}' | base64 -d"
+  register: cert_result
+
+- name: Set certificate fact
+  set_fact:
+    driver_cert: "{{ cert_result.stdout }}"
+
 - name: Onboard driver
   uri:
     url: "{{ drivers_onboard_addr }}/api/resource-manager/vim-drivers"
@@ -27,6 +35,7 @@
     body:
       infrastructureType: "{{onboard_driver_type}}"
       baseUri: "{{onboard_driver_url}}"
+      certificate: "{{driver_cert}}"
     headers:
       authorization: "{% if drivers_onboard_auth|default(False)|bool == True %}Bearer {{ lm_access_token }}{% endif %}"
     status_code: 201

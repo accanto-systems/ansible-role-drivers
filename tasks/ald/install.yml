@@ -1,3 +1,6 @@
+- name: Ensure ald-tls secret removed
+  shell: kubectl delete secret ald-tls
+  failed_when: false
 
 - name: Copy Ansible Lifecycle Driver helm values
   template: 
@@ -19,7 +22,7 @@
 
 - name: Determine Ansible Lifecycle Driver address
   set_fact: 
-    ald_addr: "http://{{ advertise_address if advertise_address is defined else hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:{{ald_port}}"
+    ald_addr: "https://{{ advertise_address if advertise_address is defined else hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:{{ald_port}}"
 
 - name: Wait for Ansible Lifecycle Driver to be ready
   uri:

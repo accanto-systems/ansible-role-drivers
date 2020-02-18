@@ -1,4 +1,7 @@
-
+- name: Ensure ovd-tls secret removed
+  shell: kubectl delete secret ovd-tls
+  failed_when: false
+  
 - name: Copy Openstack VIM Driver helm values
   template: 
     src: ovd/values.yml
@@ -19,7 +22,7 @@
 
 - name: Determine Openstack VIM Driver address
   set_fact: 
-    ovd_addr: "http://{{ advertise_address if advertise_address is defined else hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:{{ovd_port}}"
+    ovd_addr: "https://{{ advertise_address if advertise_address is defined else hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:{{ovd_port}}"
 
 - name: Wait for Openstack VIM Driver to be ready
   uri:
