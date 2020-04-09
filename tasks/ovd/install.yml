@@ -1,5 +1,7 @@
 - name: Ensure ovd-tls secret removed
-  shell: kubectl delete secret ovd-tls
+  shell: source /etc/profile.d/apps-bin-path.sh && kubectl delete secret ovd-tls
+  args:
+    executable: /bin/bash
   failed_when: false
   
 - name: Copy Openstack VIM Driver helm values
@@ -13,7 +15,9 @@
   command: "helm install {{ helm_inst_ovd_chart }} --name os-vim-driver -f /tmp/ovd-values.yml {% if ovd_docker_registry_values_path is defined %}-f {{ ovd_docker_registry_values_path }}{% endif %}"
 
 - name: Gather Openstack VIM Driver Node Port
-  shell: "kubectl describe service os-vim-driver | grep http | grep NodePort | awk '{print $3}'"
+  shell: "source /etc/profile.d/apps-bin-path.sh && kubectl describe service os-vim-driver | grep http | grep NodePort | awk '{print $3}'"
+  args:
+    executable: /bin/bash
   register: gather_ovd_port_result
 
 - name: Determine Openstack VIM Driver Node Port
