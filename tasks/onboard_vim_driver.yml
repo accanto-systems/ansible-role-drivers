@@ -19,7 +19,9 @@
   when: drivers_onboard_auth|default(False)|bool == True
 
 - name: Fetch driver certificate
-  shell: "kubectl get secret {{onboard_driver_cert_secret}} -o 'go-template={{'{{'}}index .data \"tls.crt\"{{'}}'}}' | base64 -d"
+  shell: "source /etc/profile.d/apps-bin-path.sh && kubectl get secret {{onboard_driver_cert_secret}} -o 'go-template={{'{{'}}index .data \"tls.crt\"{{'}}'}}' | base64 -d"
+  args:
+    executable: /bin/bash
   register: cert_result
 
 - name: Set certificate fact
