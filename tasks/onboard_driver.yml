@@ -1,0 +1,44 @@
+- name: Authenticate with LM
+  uri:
+    url: "{{ drivers_onboard_addr }}/oauth/token"
+    validate_certs: no
+    method: POST
+    body_format: form-urlencoded
+    body:
+      grant_type: "client_credentials"
+    headers:
+      authorization: "Basic {{ (drivers_onboard_client + ':' + drivers_onboard_client_secret) | b64encode }}"
+    return_content: yes
+    status_code: 200
+  register: lm_auth_response
+  when: drivers_onboard_auth|default(False)|bool == True
+
+- name: Set Access Token fact
+  set_fact:
+    lm_access_token: "{{ lm_auth_response.json.access_token }}"
+  when: drivers_onboard_auth|default(False)|bool == True
+
+- name: Fetch driver certificate
+  shell: "source /etc/profile.d/apps-bin-path.sh && kubectl get secret {{onboard_driver_cert_secret}} -o 'go-template={{'{{'}}index .data \"tls.crt\"{{'}}'}}' | base64 -d"
+  args:
+    executable: /bin/bash
+  register: cert_result
+
+- name: Set certificate fact
+  set_fact:
+    driver_cert: "{{ cert_result.stdout }}"
+
+- name: Onboard driver
+  uri:
+    url: "{{ drivers_onboard_addr }}/api/resource-manager/resource-drivers"
+    validate_certs: no
+    method: POST
+    body_format: json
+    body:
+      type: "{{onboard_driver_type}}"
+      baseUri: "{{onboard_driver_url}}"
+      certificate: "{{driver_cert}}"
+    headers:
+      authorization: "{% if drivers_onboard_auth|default(False)|bool == True %}Bearer {{ lm_access_token }}{% endif %}"
+    status_code: 201
+
