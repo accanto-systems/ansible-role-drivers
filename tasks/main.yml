@@ -33,12 +33,19 @@
         - import_tasks: ald/uninstall.yml
         - import_tasks: ald/install.yml
     - when: drivers_onboard|default(False)|bool == True
-      import_tasks: onboard_lifecycle_driver.yml
-      vars:
-        onboard_driver_type: "{{ drivers_ald_type }}"
-        onboard_driver_url: "{{ drivers_ald_url }}"
-        onboard_driver_cert_secret: "{{ drivers_ald_cert_secret }}"
-      
+      block:
+        - import_tasks: onboard_lifecycle_driver.yml
+          vars:
+            onboard_driver_type: "{{ drivers_ald_type }}"
+            onboard_driver_url: "{{ drivers_ald_url }}"
+            onboard_driver_cert_secret: "{{ drivers_ald_cert_secret }}"
+      rescue:
+        - import_tasks: onboard_driver.yml
+          vars:
+            onboard_driver_type: "{{ drivers_ald_type }}"
+            onboard_driver_url: "{{ drivers_ald_url }}"
+            onboard_driver_cert_secret: "{{ drivers_ald_cert_secret }}"
+
 - when: drivers_ovd_enabled|default(False)|bool == True
   block:
     - import_tasks: ovd/validate_charts_strategy.yml
@@ -59,9 +66,15 @@
         - import_tasks: ovd/uninstall.yml
         - import_tasks: ovd/install.yml
     - when: drivers_onboard|default(False)|bool == True
-      import_tasks: onboard_vim_driver.yml
-      vars:
-        onboard_driver_type: "{{ drivers_ovd_type }}"
-        onboard_driver_url: "{{ drivers_ovd_url }}"
-        onboard_driver_cert_secret: "{{ drivers_ovd_cert_secret }}"
-      
+      block:
+        - import_tasks: onboard_vim_driver.yml
+          vars:
+            onboard_driver_type: "{{ drivers_ovd_type }}"
+            onboard_driver_url: "{{ drivers_ovd_url }}"
+            onboard_driver_cert_secret: "{{ drivers_ovd_cert_secret }}"
+      rescue:
+        - import_tasks: onboard_driver.yml
+          vars:
+            onboard_driver_type: "{{ drivers_ovd_type }}"
+            onboard_driver_url: "{{ drivers_ovd_url }}"
+            onboard_driver_cert_secret: "{{ drivers_ovd_cert_secret }}"
