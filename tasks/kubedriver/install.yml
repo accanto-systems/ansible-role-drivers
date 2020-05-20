@@ -1,0 +1,39 @@
+- name: Ensure kubedriver-tls secret removed
+  shell: source /etc/profile.d/apps-bin-path.sh && kubectl delete secret kubedriver-tls
+  args:
+    executable: /bin/bash
+  failed_when: false
+
+- name: Copy Kubernetes Driver helm values
+  template: 
+    src: kubedriver/values.yml
+    dest: /tmp/kubedriver-values.yml
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}" 
+
+- name: Install Kubernetes Driver Helm Charts
+  command: "helm install {{ helm_inst_kubedriver_chart }} --name kubedriver -f /tmp/kubedriver-values.yml {% if kubedriver_docker_registry_values_path is defined %}-f {{ kubedriver_docker_registry_values_path }}{% endif %}"
+
+- name: Gather Kubernetes Driver Node Port
+  shell: "source /etc/profile.d/apps-bin-path.sh && kubectl describe service kubedriver | grep http | grep NodePort | awk '{print $3}'"
+  args:
+    executable: /bin/bash
+  register: gather_kubedriver_port_result
+
+- name: Determine Kubernetes Driver Node Port
+  set_fact:
+    kubedriver_port: "{{ gather_kubedriver_port_result.stdout | replace('/TCP', '') }}"
+
+- name: Determine Kubernetes Driver address
+  set_fact: 
+    kubedriver_addr: "https://{{ advertise_address if advertise_address is defined else hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:{{kubedriver_port}}"
+
+- name: Wait for Kubernetes Driver to be ready
+  uri:
+    url: "{{ kubedriver_addr }}/management/health"
+    validate_certs: false
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 100
+  delay: 20

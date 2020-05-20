@@ -1,0 +1,6 @@
+- name: "Validate variable: drivers_kubedriver_chart"
+  assert:
+    that: 
+      - "drivers_kubedriver_chart is defined"
+    fail_msg: "drivers_kubedriver_chart must be defined when drivers_kubedriver_enabled"
+

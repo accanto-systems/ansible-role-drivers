@@ -69,7 +69,7 @@
       block:
         - import_tasks: onboard_vim_driver.yml
           vars:
-            onboard_driver_type: "{{ drivers_ovd_type }}"
+            onboard_driver_type: "{{ drivers_ovd_vim_type }}"
             onboard_driver_url: "{{ drivers_ovd_url }}"
             onboard_driver_cert_secret: "{{ drivers_ovd_cert_secret }}"
       rescue:
@@ -78,3 +78,31 @@
             onboard_driver_type: "{{ drivers_ovd_type }}"
             onboard_driver_url: "{{ drivers_ovd_url }}"
             onboard_driver_cert_secret: "{{ drivers_ovd_cert_secret }}"
+
+- when: drivers_kubedriver_enabled|default(False)|bool == True
+  block:
+    - import_tasks: kubedriver/validate_charts_strategy.yml
+    - import_tasks: kubedriver/validate_docker_strategy.yml
+    - import_tasks: kubedriver/prepare_chart_from_path.yml
+    - name: Check if force re-install is enabled
+      set_fact:
+        kubedriver_install_allowed: True
+      when: drivers_kubedriver_force_reinstall|default(False)|bool == True
+    - import_tasks: kubedriver/check_current_install.yml
+      when: drivers_kubedriver_force_reinstall|default(False)|bool == False
+    - when: kubedriver_install_allowed == True
+      block:
+        - import_tasks: kubedriver/prepare_docker_images_from_tar.yml
+          when: drivers_kubedriver_docker_strategy == 'from_package'
+        - import_tasks: kubedriver/prepare_docker_images_from_image.yml
+          when: drivers_kubedriver_docker_strategy == 'from_image'
+        - import_tasks: kubedriver/uninstall.yml
+        - import_tasks: kubedriver/install.yml
+    - when: drivers_onboard|default(False)|bool == True
+      block:
+        - import_tasks: onboard_driver.yml
+          vars:
+            onboard_driver_type: "{{ drivers_kubedriver_type }}"
+            onboard_driver_url: "{{ drivers_kubedriver_url }}"
+            onboard_driver_cert_secret: "{{ drivers_kubedriver_cert_secret }}"
+

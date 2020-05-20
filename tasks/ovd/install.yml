@@ -30,7 +30,7 @@
 
 - name: Wait for Openstack VIM Driver to be ready
   uri:
-    url: "{{ ovd_addr }}/api/infrastructure/ui"
+    url: "{{ ovd_addr }}/management/health"
     validate_certs: false
     status_code: 200
   register: result

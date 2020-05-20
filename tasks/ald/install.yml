@@ -30,7 +30,7 @@
 
 - name: Wait for Ansible Lifecycle Driver to be ready
   uri:
-    url: "{{ ald_addr }}/api/lifecycle/ui"
+    url: "{{ ald_addr }}/management/health"
     validate_certs: false
     status_code: 200
   register: result
