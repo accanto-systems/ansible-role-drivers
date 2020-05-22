@@ -1,0 +1,9 @@
+- name: Check kubedriver release in helm
+  shell: helm get kubedriver
+  register: helm_get_kubedriver
+  failed_when: false
+  changed_when: false
+
+- name: Uninstall kubedriver release
+  shell: helm delete kubedriver --purge
+  when: helm_get_kubedriver is not failed and helm_get_kubedriver.rc == 0

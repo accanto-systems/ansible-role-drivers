@@ -1,0 +1,33 @@
+- name: Determine if Kubernetes Driver already installed
+  shell: helm ls | grep kubedriver
+  failed_when: false
+  changed_when: false
+  register: kubedriver_install
+
+- when: kubedriver_install is not failed and kubedriver_install.rc == 0
+  block:
+    - name: Check Kubernetes Driver version to be installed
+      shell: helm inspect chart {{ helm_inst_kubedriver_chart }} | grep version | awk {'print $2'}
+      register:  kubedriver_new_version
+
+    - debug:
+        msg: "Kubernetes Driver version to be installed is {{kubedriver_new_version.stdout}}"
+
+    - name: Compare with current Kubernetes Driver version
+      shell: helm ls | grep kubedriver | grep -w kubedriver-{{ kubedriver_new_version.stdout }}
+      register: kubedriver_version_compare
+      failed_when: false
+      changed_when: false
+
+    - name: Set install 
+      set_fact:
+        kubedriver_install_allowed: "{{ True if kubedriver_version_compare.rc != 0 else False }}"
+
+    - name: Announce Install 
+      debug:
+        msg: "{{ 'Re-installing Kubernetes Driver as current version is different to '+kubedriver_new_version.stdout if kubedriver_install_allowed else 'Kubernetes Driver version '+kubedriver_new_version.stdout+' already installed' }}"
+
+- name: Install when no existing version
+  set_fact:
+    kubedriver_install_allowed: True
+  when: kubedriver_install is failed or kubedriver_install.rc != 0

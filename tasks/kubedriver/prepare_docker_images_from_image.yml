@@ -1,0 +1,10 @@
+- name: Create Docker Image Registry values file
+  template:
+    src: "kubedriver/docker-registry-values.yml"
+    dest: "{{ drivers_installer_dir }}/kubedriver-docker-registry-values.yml"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
+
+- name: Create Docker Registry values file inclusion property
+  set_fact:
+    kubedriver_docker_registry_values_path: "{{ drivers_installer_dir }}/kubedriver-docker-registry-values.yml"

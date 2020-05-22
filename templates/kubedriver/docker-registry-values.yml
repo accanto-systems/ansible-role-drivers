@@ -1,0 +1,6 @@
+docker:
+  ## Make this the full path, including registry host and port if using one
+  image: "{{ drivers_kubedriver_docker_image }}"
+{% if drivers_kubedriver_docker_version is defined %}
+  version: "{{ drivers_kubedriver_docker_version }}"
+{% endif %}

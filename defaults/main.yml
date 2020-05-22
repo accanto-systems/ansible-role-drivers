@@ -37,6 +37,24 @@ drivers_ovd_docker_version: 0.7.1
 #drivers_ovd_docker_strategy: from_package
 #drivers_ovd_docker_tar: 
 ## Type to assign the driver to during onboarding
-drivers_ovd_type: Openstack
+drivers_ovd_type: openstack
+## Alternative type for 2.1 versions of LM where the driver must be a VIM driver assigned to a deployment location infrastructure type
+drivers_ovd_vim_type: Openstack
 drivers_ovd_url: https://os-vim-driver:8292
 drivers_ovd_cert_secret: ovd-tls
+
+## Kubernetes Driver
+drivers_kubedriver_enabled: True
+drivers_kubedriver_force_reinstall: False
+## Full file or http address of the helm chart
+drivers_kubedriver_chart: https://github.com/accanto-systems/kubernetes-driver/releases/download/0.0.3a2/kubedriver-0.0.3a2.tgz
+## Docker image and version 
+drivers_kubedriver_docker_strategy: from_image
+drivers_kubedriver_docker_image: accanto/kubedriver
+drivers_kubedriver_docker_version: 0.0.3a2
+#drivers_kubedriver_docker_strategy: from_package
+#drivers_kubedriver_docker_tar: 
+## Type to assign the driver to during onboarding
+drivers_kubedriver_type: kubernetes
+drivers_kubedriver_url: https://kubedriver:8294
+drivers_kubedriver_cert_secret: kubedriver-tls
