@@ -1,0 +1,47 @@
+- name: Authenticate with LM
+  uri:
+    url: "{{ drivers_onboard_addr }}/oauth/token"
+    validate_certs: no
+    method: POST
+    body_format: form-urlencoded
+    body:
+      grant_type: "client_credentials"
+    headers:
+      authorization: "Basic {{ (drivers_onboard_client + ':' + drivers_onboard_client_secret) | b64encode }}"
+    return_content: yes
+    status_code: 200
+  register: lm_auth_response
+
+- name: Set Access Token fact
+  set_fact:
+    lm_access_token: "{{ lm_auth_response.json.access_token }}"
+
+- name: Get kubectl config via microk8s.config
+  shell: source /etc/profile.d/apps-bin-path.sh && microk8s.config view
+  args:
+    executable: /bin/bash
+  register: microk8s_config_result 
+
+- set_fact:
+    kubeconfig: "{{ microk8s_config_result.stdout }}"
+
+- name: Create new deployment location
+  uri:
+    url: "{{ drivers_onboard_addr }}/api/deploymentLocations"
+    validate_certs: no
+    method: POST
+    body_format: json
+    body:
+      id: "{{ deployment_location_kubedriver_name|default('local-kubernetes', true) }}"
+      name: "{{ deployment_location_kubedriver_name|default('local-kubernetes', true) }}"
+      description: "AIO Kubernetes cluster as deployment location for kubedriver"
+      infrastructureType: Kubernetes
+      resourceManager: brent
+      infrastructureSpecificProperties:
+        connectionType: kubectl
+        clientConfig: 
+          "{{kubeconfig | regex_replace('\"')}}"
+    headers:
+      authorization: "Bearer {{ lm_access_token }}"
+    status_code: 201
+
