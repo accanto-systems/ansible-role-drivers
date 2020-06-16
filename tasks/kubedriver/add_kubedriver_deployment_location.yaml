@@ -1,0 +1,64 @@
+- name: Authenticate with LM
+  uri:
+    url: "{{ drivers_onboard_addr }}/oauth/token"
+    validate_certs: no
+    method: POST
+    body_format: form-urlencoded
+    body:
+      grant_type: "client_credentials"
+    headers:
+      authorization: "Basic {{ (drivers_onboard_client + ':' + drivers_onboard_client_secret) | b64encode }}"
+    return_content: yes
+    status_code: 200
+  register: lm_auth_response
+
+- name: Set Access Token fact
+  set_fact:
+    lm_access_token: "{{ lm_auth_response.json.access_token }}"
+
+- name: Check if deployment location with name {{ kubedriver_deployment_location_name }} exists
+  ignore_errors: True
+  uri:
+    url: "{{ drivers_onboard_addr }}/api/deploymentLocations/{{ kubedriver_deployment_location_name }}"
+    validate_certs: no
+    method: GET
+    headers:
+      authorization: "Bearer {{ lm_access_token }}"
+  register: location_lookup
+  when: kubedriver_deployment_location_name is defined
+
+- debug:
+    msg: "Deployment Location '{{ kubedriver_deployment_location_name }}' already exists in LM. Skipping creation of new location."
+  when: location_lookup.status != 404
+
+- when: location_lookup.status == 404
+  block:
+    - name: Get microk8s.config from AIO Kubernetes cluster
+      shell: source /etc/profile.d/apps-bin-path.sh && microk8s.config view
+      args:
+        executable: /bin/bash
+      register: microk8s_config_result
+
+    - set_fact:
+        kubeconfig: "{{ microk8s_config_result.stdout }}"
+
+    - name: Create new deployment location for Kubernetes Driver
+      uri:
+        url: "{{ drivers_onboard_addr }}/api/deploymentLocations"
+        validate_certs: no
+        method: POST
+        body_format: json
+        body:
+          id: "{{ kubedriver_deployment_location_name|default('local-kubernetes', true) }}"
+          name: "{{ kubedriver_deployment_location_name|default('local-kubernetes', true) }}"
+          description: "AIO Kubernetes cluster as deployment location for kubedriver"
+          infrastructureType: Kubernetes
+          resourceManager: brent
+          infrastructureSpecificProperties:
+            connectionType: kubectl
+            clientConfig:
+              "{{kubeconfig | regex_replace('\"')}}"
+        headers:
+          authorization: "Bearer {{ lm_access_token }}"
+        status_code: 201
+
