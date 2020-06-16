@@ -105,5 +105,5 @@
             onboard_driver_type: "{{ drivers_kubedriver_type }}"
             onboard_driver_url: "{{ drivers_kubedriver_url }}"
             onboard_driver_cert_secret: "{{ drivers_kubedriver_cert_secret }}"
-    - when: deployment_location_kubedriver|default(False)|bool == True
+    - when: kubedriver_create_deployment_location|default(False)|bool == True
       import_tasks: kubedriver/add_kubedriver_deployment_location.yaml

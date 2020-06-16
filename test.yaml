@@ -1,0 +1,11 @@
+- hosts: microk8s
+#  vars_files:
+#    - file: defaults/main.yml
+  tasks:
+    - import_tasks: tasks/kubedriver/add_kubedriver_deployment_location.yaml
+      vars:
+        drivers_onboard_addr: https://10.220.217.147:32443
+        drivers_onboard_client: LmClient
+        drivers_onboard_client_secret: pass123
+        kubedriver_deployment_location_name: hihi
+ 
