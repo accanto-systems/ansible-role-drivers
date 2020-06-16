@@ -16,32 +16,49 @@
   set_fact:
     lm_access_token: "{{ lm_auth_response.json.access_token }}"
 
-- name: Get kubectl config via microk8s.config
-  shell: source /etc/profile.d/apps-bin-path.sh && microk8s.config view
-  args:
-    executable: /bin/bash
-  register: microk8s_config_result 
-
-- set_fact:
-    kubeconfig: "{{ microk8s_config_result.stdout }}"
-
-- name: Create new deployment location
+- name: Check if deployment location with name {{ deployment_location_kubedriver_name }} exists
+  ignore_errors: True
   uri:
-    url: "{{ drivers_onboard_addr }}/api/deploymentLocations"
+    url: "{{ drivers_onboard_addr }}/api/deploymentLocations/{{ deployment_location_kubedriver_name }}"
     validate_certs: no
-    method: POST
-    body_format: json
-    body:
-      id: "{{ deployment_location_kubedriver_name|default('local-kubernetes', true) }}"
-      name: "{{ deployment_location_kubedriver_name|default('local-kubernetes', true) }}"
-      description: "AIO Kubernetes cluster as deployment location for kubedriver"
-      infrastructureType: Kubernetes
-      resourceManager: brent
-      infrastructureSpecificProperties:
-        connectionType: kubectl
-        clientConfig: 
-          "{{kubeconfig | regex_replace('\"')}}"
+    method: GET
     headers:
       authorization: "Bearer {{ lm_access_token }}"
-    status_code: 201
+  register: location_lookup
+  when: deployment_location_kubedriver_name is defined
+
+- debug:
+    msg: "Deployment Location '{{ deployment_location_kubedriver_name }}' already exists in LM. Skipping creation of new location."
+  when: location_lookup.status != 404
+
+- when: location_lookup.status == 404
+  block:
+    - name: Get microk8s.config from AIO Kubernetes cluster
+      shell: source /etc/profile.d/apps-bin-path.sh && microk8s.config view
+      args:
+        executable: /bin/bash
+      register: microk8s_config_result
+
+    - set_fact:
+        kubeconfig: "{{ microk8s_config_result.stdout }}"
+
+    - name: Create new deployment location for Kubernetes Driver
+      uri:
+        url: "{{ drivers_onboard_addr }}/api/deploymentLocations"
+        validate_certs: no
+        method: POST
+        body_format: json
+        body:
+          id: "{{ deployment_location_kubedriver_name|default('local-kubernetes', true) }}"
+          name: "{{ deployment_location_kubedriver_name|default('local-kubernetes', true) }}"
+          description: "AIO Kubernetes cluster as deployment location for kubedriver"
+          infrastructureType: Kubernetes
+          resourceManager: brent
+          infrastructureSpecificProperties:
+            connectionType: kubectl
+            clientConfig:
+              "{{kubeconfig | regex_replace('\"')}}"
+        headers:
+          authorization: "Bearer {{ lm_access_token }}"
+        status_code: 201
 
